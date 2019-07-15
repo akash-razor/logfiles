@@ -13,15 +13,11 @@ import (
 
 func CreateLog(c *gin.Context){
 
-	//fmt.Println(c)
 	var logs []models.LogModel
 	c.BindJSON(&logs)
 	var wg sync.WaitGroup
 	wg.Add(len(logs))
 	for _, item := range logs{
-		//fmt.Println(item)
-		//db.Save(&item)
-		//fmt.Println(item)
 		go func(item1 models.LogModel){
 			fmt.Println(item1)
 			database.Db.Save(&item1)
@@ -31,17 +27,16 @@ func CreateLog(c *gin.Context){
 	}
 	wg.Wait()
 	fmt.Println("done")
-	//db.Create(logs)
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "done"})
 
 }
 
 func ReadUserLog(c *gin.Context){
 	var logs []models.LogModel
-	//var _logs []obfucatedLog
-	database.Db.Where("description LIKE ?", c.Query("description")).Find(&logs)
+	descQuery := fmt.Sprintf("%%%v%%", c.Query("description"))
+	database.Db.Where("description LIKE ?", descQuery).Find(&logs)
 	if len(logs) <= 0{
-		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message":"No todo found!"})
+		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message":"No log found!"})
 		return
 	}
 
@@ -49,10 +44,6 @@ func ReadUserLog(c *gin.Context){
 		logs[i].Name = "xxxxxxx"
 		logs[i].Email = "xxxxxxx"
 		logs[i].Phone = 000000000
-		//fmt.Println(item)
-		//Name := "xxxxxxx"
-		//Email := "xxxxxxx"
-		//Phone := 00000000
 
 	}
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data":logs})
@@ -60,8 +51,10 @@ func ReadUserLog(c *gin.Context){
 
 func ReadAdminLog(c *gin.Context){
 	var logs []models.LogModel
-	database.Db.Where("name LIKE ?", c.Query("name")).Or("email LIKE ?", c.Query("email")).Or("phone = ?", c.Query("phone")).Or("description = ?", c.Query("description")).Find(&logs)
-	//db.Find(&logs)
+	nameQuery := fmt.Sprintf("%%%v%%", c.Query("name"))
+	emailQuery := fmt.Sprintf("%%%v%%", c.Query("email"))
+	descQuery := fmt.Sprintf("%%%v%%", c.Query("description"))
+	database.Db.Where("name LIKE ?", nameQuery).Or("email LIKE ?", emailQuery).Or("phone = ?", c.Query("phone")).Or("description = ?", descQuery).Find(&logs)
 	if len(logs) <= 0{
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message":"No todo found!"})
 		return
@@ -71,7 +64,6 @@ func ReadAdminLog(c *gin.Context){
 
 func FileCreateLog(c *gin.Context){
 	plan, _ := ioutil.ReadFile(c.Query("filePath"))
-	//fmt.Println("query",c.Query("sdhsdv"))
 	if c.Query("dfgf")==""{
 		fmt.Println("here")
 	}
@@ -80,9 +72,6 @@ func FileCreateLog(c *gin.Context){
 	var wg sync.WaitGroup
 	wg.Add(len(logs))
 	for _, item := range logs{
-		//fmt.Println(item)
-		//db.Save(&item)
-		//fmt.Println(item)
 		go func(item1 models.LogModel){
 			fmt.Println(item1)
 			database.Db.Save(&item1)
