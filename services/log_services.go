@@ -64,9 +64,6 @@ func ReadAdminLog(c *gin.Context){
 
 func FileCreateLog(c *gin.Context){
 	plan, _ := ioutil.ReadFile(c.Query("filePath"))
-	if c.Query("dfgf")==""{
-		fmt.Println("here")
-	}
 	var logs []models.LogModel
 	json.Unmarshal(plan, &logs)
 	var wg sync.WaitGroup
