@@ -15,17 +15,7 @@ func CreateLog(c *gin.Context){
 
 	var logs []models.LogModel
 	c.BindJSON(&logs)
-	var wg sync.WaitGroup
-	wg.Add(len(logs))
-	for _, item := range logs{
-		go func(item1 models.LogModel){
-			fmt.Println(item1)
-			database.Db.Save(&item1)
-			wg.Done()
-		}(item)
-
-	}
-	wg.Wait()
+	saveDb(logs)
 	fmt.Println("done")
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "done"})
 
@@ -66,15 +56,33 @@ func FileCreateLog(c *gin.Context){
 	plan, _ := ioutil.ReadFile(c.Query("filePath"))
 	var logs []models.LogModel
 	json.Unmarshal(plan, &logs)
-	var wg sync.WaitGroup
-	wg.Add(len(logs))
-	for _, item := range logs{
-		go func(item1 models.LogModel){
-			fmt.Println(item1)
-			database.Db.Save(&item1)
-			wg.Done()
-		}(item)
-
-	}
+	fmt.Println(len(logs))
+	saveDb(logs)
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data":logs})
+}
+
+func saveDb(logs []models.LogModel){
+	jobs := make(chan models.LogModel, len(logs))
+
+	numberofWorker := 5
+
+	var wg sync.WaitGroup
+
+	wg.Add(numberofWorker)
+
+	for i:=0; i<numberofWorker; i++{
+		go func(){
+			for log:=range jobs{
+				database.Db.Save(&log)
+			}
+			wg.Done()
+		}()
+	}
+
+	for _, log := range logs{
+		jobs<-log
+	}
+
+	close(jobs)
+	wg.Wait()
 }
